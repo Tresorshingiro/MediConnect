@@ -1,19 +1,22 @@
 import React, { useEffect, useState, useContext } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { AppContext } from '../context/AppContext'
 import { assets } from '../assets/assets'
 import RelatedDoctors from '../components/RelatedDoctors'
+import { toast } from 'react-toastify'
+import axios from 'axios'
 
 
 const Appointment = () => {
   const { docId } = useParams()
-  const { doctors, currencySymbol } = useContext(AppContext)
+  const { doctors, currencySymbol, backendUrl, token, getDoctorsData } = useContext(AppContext)
   const [docInfo, setDocInfo] = useState(null)
   const [loading, setLoading] = useState(true)
   const [docSlots, setDocSlots] = useState([])
   const [slotIndex, setSlotIndex] = useState(0)
   const [slotTime, setSlotTime] = useState('')
   const daysOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
+  const navigate = useNavigate()
 
   useEffect(() => {
     fetchDocInfo();
@@ -38,7 +41,7 @@ const Appointment = () => {
   }
 
   const getAvailableSlots = async () => {
-    setDocSlots({})
+    setDocSlots([])
     
     //getting current date
     let today = new Date()
@@ -48,11 +51,11 @@ const Appointment = () => {
     for(let i=0; i<7; i++){
       //getting date with index
       let currentDate = new Date(today)
-      currentDate.setDate(today.getDate()+i)
+      currentDate.setDate(today.getDate() + i)
       
       //setting end time of the date with
       let endTime = new Date()
-      endTime.setDate(today.getDate()+1)
+      endTime.setDate(today.getDate() + i)
       endTime.setHours(21,0,0,0)
       
       //setting hours
@@ -68,12 +71,23 @@ const Appointment = () => {
       
       while(currentDate < endTime) {
         let formattedTime = currentDate.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
-        
+
+        let day = currentDate.getDate()
+        let month = currentDate.getMonth() + 1
+        let year = currentDate.getFullYear()
+
+        const slotDate = day + '_' + month + '_' + year
+        const slotTime = formattedTime
+
+        const isSlotAvailable = docInfo.slots_booked[slotDate] && docInfo.slots_booked[slotDate].includes(slotTime) ? false : true 
+
+        if(isSlotAvailable){
         //add slot to array
-        timeSlots.push({
+         timeSlots.push({
           datetime: new Date(currentDate),
           time: formattedTime,
-        });
+         });
+        }
         
         //Increment current time by 30 minutes
         currentDate.setMinutes(currentDate.getMinutes() + 30)
@@ -85,6 +99,43 @@ const Appointment = () => {
     setDocSlots(newDocSlots)
   }
 
+  const bookAppointment = async () => {
+    if(!token){
+      toast.warn('Login to book appointment')
+      return navigate('/login')
+    }
+
+    try{
+      const selectedDay = docSlots[slotIndex];
+      const selectedSlot = selectedDay.slots.find(slot => slot.time === slotTime);
+      
+      if (!selectedSlot) {
+        toast.error('Please select a time slot');
+        return;
+      }
+      
+      const date = selectedSlot.datetime;
+
+      let day = date.getDate()
+      let month = date.getMonth() + 1
+      let year = date.getFullYear()
+
+      const slotDate = day + '_' + month + '_' + year
+      
+      const { data } = await axios.post(backendUrl + '/api/user/book-appointment', {docId, slotDate, slotTime}, {headers:{token}})
+      if(data.success){
+        toast.success(data.message)
+        getDoctorsData()
+        navigate('/my-appointments')
+      } else {
+        toast.error(data.message)
+      }
+    } catch(error){
+      console.log(error)
+      toast.error(error.message)
+    }
+  }
+
   if (loading) {
     return <div className="flex justify-center items-center min-h-[300px]">Loading doctor information...</div>
   }
@@ -92,6 +143,7 @@ const Appointment = () => {
   if (!docInfo) {
     return <div className="flex justify-center items-center min-h-[300px]">Doctor not found</div>
   }
+
 
 
   return (
@@ -149,7 +201,7 @@ const Appointment = () => {
           ))}
         </div>
 
-        <button className='bg-primary text-white text-sm font-light px-14 py-3 rounded-full my-6'>Book an appointment</button>
+        <button onClick={bookAppointment} className='bg-primary text-white text-sm font-light px-14 py-3 rounded-full my-6'>Book an appointment</button>
       </div>
 
       {/* Listing Related Doctors */}
