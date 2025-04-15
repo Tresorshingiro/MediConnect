@@ -14,7 +14,7 @@ connectCloudinary()
 
 const corsOptions = {
     origin: [
-      'https://mediconnect-fawn.vercel.app',
+      'https://mediconnect-three.vercel.app',
       'http://localhost:3000',
       'http://localhost:5173'
     ],
