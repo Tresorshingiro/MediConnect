@@ -209,32 +209,53 @@ const cancelAppointment = async (req, res) => {
 
 //API to make payment
 const makePayment = async (req, res) => {
-
-    const { appointmentId } = req.body
-    const appointmentData = await appointmentModel.findById(appointmentId)
-
-    if(!appointmentData || appointmentData.cancelled){
-        return res.json({success:false, message:"Appointment Cancelled or not found"})
+    try {
+      const { appointmentId } = req.body;
+      
+      // Verify the appointment exists and isn't cancelled
+      const appointment = await appointmentModel.findById(appointmentId);
+      
+      if (!appointment || appointment.cancelled) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Appointment Cancelled or not found" 
+        });
+      }
+  
+      // Verify the user owns this appointment
+      if (appointment.userId.toString() !== req.userId.toString()) {
+        return res.status(403).json({ 
+          success: false, 
+          message: "Not authorized to pay for this appointment" 
+        });
+      }
+  
+      // Create payment intent
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: appointment.amount * 100, 
+        currency: 'usd',
+        metadata: {
+          appointmentId: appointment._id.toString(),
+          userId: req.userId.toString()
+        },
+        automatic_payment_methods: {
+          enabled: true,
+        },
+      });
+  
+      res.json({ 
+        success: true, 
+        clientSecret: paymentIntent.client_secret 
+      });
+  
+    } catch (error) {
+      console.error('Payment error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: error.message 
+      });
     }
-
-    try{
-        const {amount} = req.body
-
-        const paymentIntent = await stripe.paymentIntents.create({
-            amount: amount * 100,
-            currency: 'usd',
-            automatic_payment_methods: {
-                enabled: true,
-            },
-        })
-
-        res.json({success:true, clientSecret:paymentIntent.client_secret})
-
-    } catch(error){
-        console.log(error)
-        res.json({success:false, message:error.message})
-    }
-}
+  }
 
 
 

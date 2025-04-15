@@ -1,5 +1,5 @@
 const express = require('express')
-const { registerUser, loginUser, getProfile, updateProfile, bookAppointment, listAppointment, cancelAppointment } = require('../controllers/userController')
+const { registerUser, loginUser, getProfile, updateProfile, bookAppointment, listAppointment, cancelAppointment, makePayment } = require('../controllers/userController')
 const authUser = require('../middlewares/authUser')
 const upload = require('../middlewares/multer')
 
