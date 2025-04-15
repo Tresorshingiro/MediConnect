@@ -5,7 +5,7 @@ import { toast} from 'react-toastify'
 export const AppContext = createContext();
 
 const AppContextProvider = (props) => {
-    const currencySymbol = 'RWF'
+    const currencySymbol = 'rwf'
     const backendUrl = process.env.REACT_APP_BACKEND_URL
     const [token, setToken] = useState(localStorage.getItem('token')?localStorage.getItem('token'):false)
     const [doctors, setDoctors] = useState([])
