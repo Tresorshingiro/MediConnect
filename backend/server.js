@@ -12,12 +12,19 @@ const userRouter = require('./routes/userRoute')
 const app = express()
 connectCloudinary()
 
+const corsOptions = {
+    origin: [
+      'https://mediconnect-fawn.vercel.app',
+      'http://localhost:3000',
+      'http://localhost:5173'
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+  };
 //middleware
 app.use(express.json())
-app.use(cors({
-    origin: ['http://localhost:3000', 'http://localhost:5173', 'https://mediconnect-fawn.vercel.app'],
-    credentials: true
-}))
+app.use(cors(corsOptions))
 
 //routes
 app.use('/api/admin', adminRouter)
