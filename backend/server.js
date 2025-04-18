@@ -20,7 +20,7 @@ const corsOptions = {
       'http://localhost:5173'
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'token'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'token', 'atoken', 'dtoken'],
     credentials: true
   };
 //middleware
